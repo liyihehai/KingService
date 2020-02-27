@@ -108,12 +108,12 @@
     <dependency>
       <groupId>com.nnte</groupId>
       <artifactId>nnte_Framework</artifactId>
-      <version>1.0.1</version>
+      <version>LATEST</version>
     </dependency>
     <dependency>
       <groupId>com.nnte.kingreport</groupId>
       <artifactId>kr_business</artifactId>
-      <version>1.0.1</version>
+      <version>LATEST</version>
       <exclusions>
         <exclusion>
           <groupId>com.nnte</groupId>
@@ -122,14 +122,9 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.nnte</groupId>
-      <artifactId>nnte_Framework</artifactId>
-      <version>1.0.1</version>
-    </dependency>
-    <dependency>
       <groupId>com.nnte.kservice</groupId>
       <artifactId>OfficeConverPDF</artifactId>
-      <version>1.0.1</version>
+      <version>LATEST</version>
     </dependency>
   </dependencies>
 
