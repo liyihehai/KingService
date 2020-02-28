@@ -14,6 +14,7 @@ public class OfficeConverPDFComponent implements DisposableBean {
 
     //启动连接Openoffice
     public OfficeManager startOpenofficeManager(){
+        BaseNnte.outConsoleLog("开始连接Openoffice["+cConfig.getOpenofficeHome()+"]......");
         if (Office2PDF.officeManager==null){
             Office2PDF.setOfficeHome(cConfig.getOpenofficeHome());
             Office2PDF.officeManager=Office2PDF.getOfficeManager();
