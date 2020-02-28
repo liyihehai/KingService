@@ -21,8 +21,10 @@ public class OfficeConverPDFConfig extends NConfig {
 
     @Override
     public String getConfig(String key) {
-        if ("openofficeHome".equals(key))
+        if ("openofficeHome".equals(key)) {
+            System.out.println("openofficeHome="+openofficeHome);
             return openofficeHome;
+        }
         return null;
     }
 }
