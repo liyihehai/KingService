@@ -1,7 +1,6 @@
 package com.nnte.OfficeConverPDF;
 
 import com.nnte.framework.base.BaseNnte;
-import com.nnte.kr_business.base.Office2PDF;
 import org.artofsolving.jodconverter.office.OfficeManager;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +15,7 @@ public class OfficeConverPDFComponent implements DisposableBean {
     public OfficeManager startOpenofficeManager(){
         BaseNnte.outConsoleLog("开始连接Openoffice["+cConfig.getOpenofficeHome()+"]......");
         if (Office2PDF.officeManager==null){
-            Office2PDF.setOfficeHome(cConfig.getOpenofficeHome());
-            Office2PDF.officeManager=Office2PDF.getOfficeManager();
+            Office2PDF.officeManager=Office2PDF.getOfficeManager(cConfig.getOpenofficeHome());
             BaseNnte.outConsoleLog("连接Openoffice["+cConfig.getOpenofficeHome()+"]成功!");
         }
         if (Office2PDF.officeManager==null)
@@ -30,6 +28,7 @@ public class OfficeConverPDFComponent implements DisposableBean {
             Office2PDF.officeManager.stop();
             Office2PDF.officeManager=null;
         }
+        BaseNnte.outConsoleLog("断开Openoffice["+cConfig.getOpenofficeHome()+"]连接......");
     }
     //执行文件转换
     public String converOfficeFile(String srcFile){
@@ -43,8 +42,5 @@ public class OfficeConverPDFComponent implements DisposableBean {
         }catch (Exception e){
             throw new Exception("关闭连接Openoffice异常");
         }
-    }
-
-    public static void main(String[] args){
     }
 }

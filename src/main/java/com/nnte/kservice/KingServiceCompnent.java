@@ -1,18 +1,16 @@
 package com.nnte.kservice;
 
 import com.nnte.OfficeConverPDF.OfficeConverPDFComponent;
-import com.nnte.OfficeConverPDF.OfficeConverPDFConfig;
+import com.nnte.fdfs_client_mgr.FdfsClientMgrComponent;
 import com.nnte.framework.base.BaseNnte;
 import com.nnte.framework.base.SpringContextHolder;
-import com.nnte.kr_business.component.base.KingReportComponent;
 
 public class KingServiceCompnent {
     public void initMain(){
-        BaseNnte.outConsoleLog("程序启动......");
-        OfficeConverPDFConfig Config= SpringContextHolder.getBean("officeConverPDFConfig");
-        KingReportComponent.LoadConfigComponent(Config);
+        BaseNnte.outConsoleLog("KingService服务程序初始化......");
+        FdfsClientMgrComponent fdfsClientMgrComponent = SpringContextHolder.getBean("fdfsClientMgrComponent");
+        fdfsClientMgrComponent.runFdfsClientMgr(null);
         OfficeConverPDFComponent converPDFComponent = SpringContextHolder.getBean("officeConverPDFComponent");
-        BaseNnte.outConsoleLog("开始连接office......");
         converPDFComponent.startOpenofficeManager();
     }
 }
