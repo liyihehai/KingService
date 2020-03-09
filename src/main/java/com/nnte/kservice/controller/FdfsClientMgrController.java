@@ -20,9 +20,9 @@ public class FdfsClientMgrController {
     private FdfsClientMgrComponent fdfsClientMgrComponent;
     @RequestMapping("/srcFileUpload")
     @ResponseBody
-    public Map<String, Object> srcFileUpload(HttpServletRequest request, String srcFileName){
+    public Map<String, Object> srcFileUpload(HttpServletRequest request,String type, String srcFileName){
         Map<String,Object> ret = BaseNnte.newMapRetObj();
-        String sfileName=fdfsClientMgrComponent.uploadFile("webstatic",srcFileName);
+        String sfileName=fdfsClientMgrComponent.uploadFile(type,srcFileName);
         if (StringUtils.isNotEmpty(sfileName)){
             ret.put("sfileName",sfileName);
             BaseNnte.setRetTrue(ret,"文件上传成功!");
@@ -33,9 +33,9 @@ public class FdfsClientMgrController {
 
     @RequestMapping("/srcFileDelete")
     @ResponseBody
-    public Map<String, Object> srcFileDelete(HttpServletRequest request, String srcFileName){
+    public Map<String, Object> srcFileDelete(HttpServletRequest request, String type,String srcFileName){
         Map<String,Object> ret = BaseNnte.newMapRetObj();
-        int err=fdfsClientMgrComponent.deleteFile("webstatic",srcFileName);
+        int err=fdfsClientMgrComponent.deleteFile(type,srcFileName);
         if (err==0){
             BaseNnte.setRetTrue(ret,"文件删除成功!");
         }else

@@ -14,8 +14,6 @@ import org.csource.fastdfs.TrackerServer;
 import org.csource.fastdfs.pool.Connection;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,27 +33,28 @@ public class FdfsClientMgrComponent {
         }
     }
     private void initGroupMap(){
-        FdfsClientMgrConfig fdfsClientMgrConf= SpringContextHolder.getBean("fdfsClientMgrConfig");;
-        Integer gc=NumberUtil.getDefaultInteger(fdfsClientMgrConf.getLocalConfig(null,"groupcount"));
-        if (gc<=0) {
-            BaseNnte.outConsoleLog("没有配置文件上传的group的数量");
-            return;
-        }
-        Map<String,String> propMap=PropertiesUtil.getPropertyMap("application.properties");
-        if (propMap==null || propMap.size()<=0)
-        {
-            BaseNnte.outConsoleLog("没有配置文件的group的配置项");
-            return;
-        }
-        for(Integer i=1;i<=gc;i++){
-            String groupName="group"+i;
-            String propName="nnte.ks.fdfsclientmgr."+groupName;
-            String propVal=propMap.get(propName);
-            String[] types=propVal.split(",");
-            if (types!=null && types.length>0){
-                for(String type:types)
-                    typeGroupMap.put(type,groupName);
+        try {
+            FdfsClientMgrConfig fdfsClientMgrConf= SpringContextHolder.getBean("fdfsClientMgrConfig");
+            if (fdfsClientMgrConf == null)
+                throw new FdfsClientMgrException("未取得FdfsClientMgrConf实例");
+            Integer gc=NumberUtil.getDefaultInteger(fdfsClientMgrConf.getLocalConfig(null,"groupcount"));
+            if (gc<=0)
+                throw new FdfsClientMgrException("没有配置文件上传的group的数量");
+            Map<String,String> propMap=PropertiesUtil.getPropertyMap("application.properties");
+            if (propMap==null || propMap.size()<=0)
+                throw new FdfsClientMgrException("没有配置文件的group的配置项");
+            for(Integer i=1;i<=gc;i++){
+                String groupName="group"+i;
+                String propName="nnte.ks.fdfsclientmgr."+groupName;
+                String propVal=propMap.get(propName);
+                String[] types=propVal.split(",");
+                if (types!=null && types.length>0){
+                    for(String type:types)
+                        typeGroupMap.put(type,groupName);
+                }
             }
+        } catch (FdfsClientMgrException fe) {
+            BaseNnte.outConsoleLog(fe.getMessage());
         }
     }
     /*
