@@ -65,7 +65,7 @@ public class OfficeConverPDFController {
                         fdfsClientMgrComponent.deleteFile(type,tmpfile);
                         throw new FdfsClientMgrException("上传pdf文件至文件服务器失败");
                     }
-                    ret.put("officFile",officFile);
+                    ret.put("officeFile",officFile);
                     ret.put("pdfFile",pdfFile);
                     BaseNnte.setRetTrue(ret,"文件转换上传成功!");
                 }else {
