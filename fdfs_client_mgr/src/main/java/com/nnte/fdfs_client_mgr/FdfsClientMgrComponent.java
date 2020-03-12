@@ -159,8 +159,8 @@ public class FdfsClientMgrComponent {
             return 0;
         try {
             StorageClient storageClient = new StorageClient(trackerServer, null);
-            String group=getTypeGroupName(type)+":";
-            String fileName=submitName.replaceFirst(group,"");
+            String group=getTypeGroupName(type);
+            String fileName=submitName.replaceFirst(group+":","");
             return storageClient.delete_file(group,fileName);
         }catch (MyException me){
             stopFdfsClientMgr();
