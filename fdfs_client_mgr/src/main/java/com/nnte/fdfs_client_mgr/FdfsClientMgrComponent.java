@@ -129,9 +129,9 @@ public class FdfsClientMgrComponent {
         try {
             StorageClient storageClient = new StorageClient(trackerServer, null);
             String[] files=storageClient.upload_file(getTypeGroupName(type),FileUtil.getContent(fileName),
-                    null,null);
+                    FileUtil.getExtention(fileName),null);
             if (files!=null && files.length>1)
-                return files[1]+ File.pathSeparator+files[1];
+                return files[0]+ File.pathSeparator+files[1];
         }catch (MyException me){
             stopFdfsClientMgr();
         }catch (IOException e){
@@ -139,14 +139,14 @@ public class FdfsClientMgrComponent {
         }
         return null;
     }
-    public String uploadFile(String type,byte[] file){
+    public String uploadFile(String type,byte[] file,String extName){
         if (!isConnect())
             return null;
         try {
             StorageClient storageClient = new StorageClient(trackerServer, null);
-            String[] files=storageClient.upload_file(getTypeGroupName(type),file,null,null);
+            String[] files=storageClient.upload_file(getTypeGroupName(type),file,extName,null);
             if (files!=null && files.length>1)
-                return files[1]+ File.pathSeparator+files[1];
+                return files[0]+ File.pathSeparator+files[1];
         }catch (MyException me){
             stopFdfsClientMgr();
         }catch (IOException e){
@@ -155,12 +155,14 @@ public class FdfsClientMgrComponent {
         return null;
     }
 
-    public int deleteFile(String type,String fileName){
+    public int deleteFile(String type,String submitName){
         if (!isConnect())
             return 0;
         try {
             StorageClient storageClient = new StorageClient(trackerServer, null);
-            return storageClient.delete_file(getTypeGroupName(type),fileName);
+            String group=getTypeGroupName(type)+File.pathSeparator;
+            String fileName=submitName.replaceFirst(group,"");
+            return storageClient.delete_file(group,fileName);
         }catch (MyException me){
             stopFdfsClientMgr();
         }catch (IOException e){
