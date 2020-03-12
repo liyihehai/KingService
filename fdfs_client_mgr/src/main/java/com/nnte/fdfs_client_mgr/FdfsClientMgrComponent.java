@@ -14,7 +14,6 @@ import org.csource.fastdfs.TrackerServer;
 import org.csource.fastdfs.pool.Connection;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -131,7 +130,7 @@ public class FdfsClientMgrComponent {
             String[] files=storageClient.upload_file(getTypeGroupName(type),FileUtil.getContent(fileName),
                     FileUtil.getExtention(fileName),null);
             if (files!=null && files.length>1)
-                return files[0]+ File.pathSeparator+files[1];
+                return files[0]+":"+files[1];
         }catch (MyException me){
             stopFdfsClientMgr();
         }catch (IOException e){
@@ -146,7 +145,7 @@ public class FdfsClientMgrComponent {
             StorageClient storageClient = new StorageClient(trackerServer, null);
             String[] files=storageClient.upload_file(getTypeGroupName(type),file,extName,null);
             if (files!=null && files.length>1)
-                return files[0]+ File.pathSeparator+files[1];
+                return files[0]+":"+files[1];
         }catch (MyException me){
             stopFdfsClientMgr();
         }catch (IOException e){
@@ -160,7 +159,7 @@ public class FdfsClientMgrComponent {
             return 0;
         try {
             StorageClient storageClient = new StorageClient(trackerServer, null);
-            String group=getTypeGroupName(type)+File.pathSeparator;
+            String group=getTypeGroupName(type)+":";
             String fileName=submitName.replaceFirst(group,"");
             return storageClient.delete_file(group,fileName);
         }catch (MyException me){
