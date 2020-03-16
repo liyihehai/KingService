@@ -169,4 +169,21 @@ public class FdfsClientMgrComponent {
         }
         return 0;
     }
+
+    public byte[] downloadFile(String type,String submitName){
+        if (!isConnect())
+            return null;
+        try {
+            StorageClient storageClient = new StorageClient(trackerServer, null);
+            byte[] contents=storageClient.download_file(getTypeGroupName(type),submitName);
+            if (contents==null || contents.length<=0)
+                return null;
+            return contents;
+        }catch (MyException me){
+            stopFdfsClientMgr();
+        }catch (IOException e){
+            stopFdfsClientMgr();
+        }
+        return null;
+    }
 }
