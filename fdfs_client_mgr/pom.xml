@@ -12,7 +12,7 @@
     <groupId>com.nnte.kservice</groupId>
     <artifactId>fdfs_client_mgr</artifactId>
     <name>fdfs_client_mgr</name>
-    <version>1.0.1</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -74,7 +74,7 @@
         <dependency>
             <groupId>com.nnte</groupId>
             <artifactId>nnte_Framework</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <build>
