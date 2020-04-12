@@ -13,6 +13,7 @@
     <artifactId>OfficeConverPDF</artifactId>
     <version>1.0.1-SNAPSHOT</version>
     <name>OfficeConverPDF</name>
+    <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -79,16 +80,6 @@
     </dependencies>
 
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <classifier>exec</classifier>
-                    <mainClass>nnte.OfficeConverPDF.OfficeConverPDFComponent</mainClass>
-                </configuration>
-            </plugin>
-        </plugins>
         <resources>
             <resource>
                 <directory>src/main/java</directory>
