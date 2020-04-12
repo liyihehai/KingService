@@ -43,7 +43,7 @@ public class OfficeConverPDFController {
 
     @RequestMapping("/office2PdfBytes")
     @ResponseBody
-    public String office2PdfBytes(HttpServletRequest request,String fileName,String type,
+    public Map<String, Object> office2PdfBytes(HttpServletRequest request,String fileName,String type,
                                   HttpServletResponse response){
         Map<String,Object> ret = BaseNnte.newMapRetObj();
         String tmpfile=null;
@@ -84,6 +84,6 @@ public class OfficeConverPDFController {
                 e.printStackTrace();
             }
         }
-        return ret.toString();
+        return ret;
     }
 }
