@@ -23,12 +23,17 @@
 
     <repositories>
         <repository>
-            <id>maven-releases</id>
-            <name>maven-releases</name>
+            <id>snapshots</id>
+            <name>snapshots</name>
             <url>http://39.99.191.134:8999/repository/maven-releases</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
+        </repository>
+        <repository>
+            <id>releases</id>
+            <name>releases</name>
+            <url>http://39.99.191.134:8999/service/rest/repository/browse/maven-snapshots/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>

@@ -25,7 +25,7 @@
   <repositories>
     <repository>
       <id>snapshots</id>
-      <url>http://39.99.191.134:8999/repository/maven-snapshots/</url>
+      <url>http://39.99.191.134:8999/service/rest/repository/browse/maven-snapshots/</url>
     </repository>
   </repositories>
 
