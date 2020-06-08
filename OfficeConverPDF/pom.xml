@@ -45,6 +45,11 @@
         </snapshotRepository>
     </distributionManagement>
     <dependencies>
+        <dependency>
+            <groupId>com.nnte</groupId>
+            <artifactId>nnte_BaseBusi</artifactId>
+            <version>1.0.1-SNAPSHOT</version>
+        </dependency>
         <!--openoffice-->
         <dependency>
             <groupId>org.openoffice</groupId>

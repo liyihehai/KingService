@@ -3,7 +3,7 @@ package com.nnte.kservice.controller;
 import com.nnte.fdfs_client_mgr.FdfsClientMgrComponent;
 import com.nnte.framework.base.BaseNnte;
 import com.nnte.framework.utils.FileUtil;
-import com.nnte.framework.utils.HttpUtil;
+import com.nnte.framework.utils.HttpServletUtil;
 import com.nnte.framework.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -48,7 +48,7 @@ public class FdfsClientMgrController {
                                                HttpServletResponse response){
         Map<String,Object> ret = BaseNnte.newMapRetObj();
         try {
-            byte[] buf= HttpUtil.recvHttpFile(request, response);
+            byte[] buf= HttpServletUtil.recvHttpFile(request);
             if (buf!=null && buf.length>0){
                 String submitName=fdfsClientMgrComponent.uploadFile(type,
                         buf,FileUtil.getExtention(fileName));

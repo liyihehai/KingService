@@ -1,32 +1,17 @@
 package com.nnte.fdfs_client_mgr;
 
-import com.nnte.framework.base.NConfigI;
+import com.nnte.framework.base.ConfigInterface;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+@Getter
+@Setter
 @Component
 @ConfigurationProperties(prefix = "nnte.ks.fdfsclientmgr")
-public class FdfsClientMgrConfig implements NConfigI {
+
+public class FdfsClientMgrConfig implements ConfigInterface {
     private String propertiesFile;
     private String groupcount;
-    @Override
-    public String getLocalConfig(String type, String key) {
-        if ("propertiesFile".equals(key))
-            return propertiesFile;
-        else if ("groupcount".equals(key))
-            return groupcount;
-        return null;
-    }
-    @Override
-    public boolean setLocalConfig(String type, String key, String val) {
-        return false;
-    }
-
-    public void setPropertiesFile(String propertiesFile) {
-        this.propertiesFile = propertiesFile;
-    }
-
-    public void setGroupcount(String groupcount) {
-        this.groupcount = groupcount;
-    }
 }

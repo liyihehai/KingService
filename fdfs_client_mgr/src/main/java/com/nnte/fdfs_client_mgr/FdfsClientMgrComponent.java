@@ -1,6 +1,7 @@
 package com.nnte.fdfs_client_mgr;
 
-import com.nnte.framework.base.BaseNnte;
+import com.nnte.basebusi.base.BaseBusiComponent;
+import com.nnte.basebusi.excption.BusiException;
 import com.nnte.framework.base.SpringContextHolder;
 import com.nnte.framework.utils.FileUtil;
 import com.nnte.framework.utils.NumberUtil;
@@ -19,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class FdfsClientMgrComponent {
+public class FdfsClientMgrComponent extends BaseBusiComponent {
     private static TrackerServer trackerServer = null;
     private static Map<String,String> typeGroupMap = new HashMap<>();
     private static String DEFAULT_GROUP_NAME="group1";
@@ -36,13 +37,13 @@ public class FdfsClientMgrComponent {
         try {
             FdfsClientMgrConfig fdfsClientMgrConf= SpringContextHolder.getBean("fdfsClientMgrConfig");
             if (fdfsClientMgrConf == null)
-                throw new FdfsClientMgrException("未取得FdfsClientMgrConf实例");
-            Integer gc=NumberUtil.getDefaultInteger(fdfsClientMgrConf.getLocalConfig(null,"groupcount"));
+                throw new BusiException("未取得FdfsClientMgrConf实例");
+            Integer gc=NumberUtil.getDefaultInteger(fdfsClientMgrConf.getGroupcount());
             if (gc<=0)
-                throw new FdfsClientMgrException("没有配置文件上传的group的数量");
+                throw new BusiException("没有配置文件上传的group的数量");
             Map<String,String> propMap=PropertiesUtil.getPropertyMap("application.properties");
             if (propMap==null || propMap.size()<=0)
-                throw new FdfsClientMgrException("没有配置文件的group的配置项");
+                throw new BusiException("没有配置文件的group的配置项");
             for(Integer i=1;i<=gc;i++){
                 String groupName="group"+i;
                 String propName="nnte.ks.fdfsclientmgr."+groupName;
@@ -53,34 +54,40 @@ public class FdfsClientMgrComponent {
                         typeGroupMap.put(type,groupName);
                 }
             }
-        } catch (FdfsClientMgrException fe) {
-            BaseNnte.outConsoleLog(fe.getMessage());
+        } catch (BusiException be) {
+            this.logException(be);
+        } catch (Exception e){
+            BusiException be = new BusiException(e);
+            this.logException(be);
         }
     }
     /*
     * 重连FastDFS服务器
     * */
-    private static void reConnServer(){
+    private void reConnServer(){
         try {
             FdfsClientMgrConfig fdfsClientMgrConf= SpringContextHolder.getBean("fdfsClientMgrConfig");;
             if (fdfsClientMgrConf == null)
-                throw new FdfsClientMgrException("未取得FdfsClientMgrConf实例");
+                throw new BusiException("未取得FdfsClientMgrConf实例");
             try {
-                ClientGlobal.initByProperties(fdfsClientMgrConf.getLocalConfig("", "propertiesFile"));
+                ClientGlobal.initByProperties(fdfsClientMgrConf.getPropertiesFile());
                 TrackerClient trackerClient = new TrackerClient();
                 trackerServer = trackerClient.getTrackerServer();
                 if (trackerServer == null)
-                    throw new FdfsClientMgrException("连接FastDFS服务端失败!");
-                BaseNnte.outConsoleLog("连接FastDFS服务端......成功!");
+                    throw new BusiException("连接FastDFS服务端失败!");
+                logFileMsg("连接FastDFS服务端......成功!");
             } catch (MyException me) {
                 trackerServer = null;
-                throw new FdfsClientMgrException(me.getMessage());
+                throw new BusiException(me.getMessage());
             } catch (IOException e) {
                 trackerServer = null;
-                throw new FdfsClientMgrException(e.getMessage());
+                throw new BusiException(e.getMessage());
             }
-        } catch (FdfsClientMgrException fe) {
-            BaseNnte.outConsoleLog(fe.getMessage());
+        } catch (BusiException be) {
+            logException(be);
+        }catch (Exception e){
+            BusiException be = new BusiException(e);
+            this.logException(be);
         }
     }
     /*
@@ -92,7 +99,7 @@ public class FdfsClientMgrComponent {
     /*
     * 关闭服务连接
     * */
-    public synchronized static void stopFdfsClientMgr(){
+    public synchronized void stopFdfsClientMgr(){
         if (trackerServer!=null){
             try {
                 Connection conn=trackerServer.getConnection();
@@ -104,7 +111,7 @@ public class FdfsClientMgrComponent {
                 trackerServer=null;
             }
         }
-        BaseNnte.outConsoleLog("关闭FastDFS服务端连接......");
+        logFileMsg("关闭FastDFS服务端连接......");
     }
     /*判断连接是否可用，如果不可用，则尝试重连服务端*/
     public synchronized boolean isConnect(){
@@ -113,7 +120,7 @@ public class FdfsClientMgrComponent {
         }
         return trackerServer!=null;
     }
-    public static String getTypeGroupName(String type){
+    public String getTypeGroupName(String type){
         if (typeGroupMap==null)
             return DEFAULT_GROUP_NAME;
         String groupname=typeGroupMap.get(type);
