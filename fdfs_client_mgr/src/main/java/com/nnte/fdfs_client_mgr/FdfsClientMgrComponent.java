@@ -2,17 +2,20 @@ package com.nnte.fdfs_client_mgr;
 
 import com.nnte.basebusi.base.BaseBusiComponent;
 import com.nnte.basebusi.excption.BusiException;
+import com.nnte.basebusi.excption.ExpLogInterface;
 import com.nnte.framework.base.SpringContextHolder;
 import com.nnte.framework.utils.FileUtil;
 import com.nnte.framework.utils.NumberUtil;
 import com.nnte.framework.utils.PropertiesUtil;
 import com.nnte.framework.utils.StringUtils;
+import lombok.Getter;
+import lombok.Setter;
 import org.csource.common.MyException;
+import org.csource.common.NameValuePair;
 import org.csource.fastdfs.ClientGlobal;
 import org.csource.fastdfs.StorageClient;
 import org.csource.fastdfs.TrackerClient;
 import org.csource.fastdfs.TrackerServer;
-import org.csource.fastdfs.pool.Connection;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -21,17 +24,102 @@ import java.util.Map;
 
 @Component
 public class FdfsClientMgrComponent extends BaseBusiComponent {
-    private static TrackerServer trackerServer = null;
+
     private static Map<String,String> typeGroupMap = new HashMap<>();
     private static String DEFAULT_GROUP_NAME="group1";
+    private static final String RETRY_EXCEPTION_MSG = "recv package size -1";
+
+    private static FdfsConns g_FdfsConns;
+
+    @Getter @Setter
+    public static class FdfsConns{
+        private String confFile;
+        private TrackerClient trackerClient=null;
+        private TrackerServer trackerServer=null;
+
+        /**
+         * 创建StorageClient
+         */
+        public synchronized StorageClient createStorageClient() throws Exception{
+            if (!isConnect())
+                throw new Exception("trackerServer is invalid!");
+            StorageClient storageClient = new StorageClient(trackerServer, null);
+            if (storageClient.isAvaliable() && storageClient.isConnected())
+                return storageClient;
+            throw new Exception("storageClient is invalid!");
+        }
+        /**
+         * 断开StorageClient
+         * */
+        private static void closeStorageClient(StorageClient storageClient){
+            if (storageClient!=null) {
+                try {
+                    storageClient.close();
+                } catch (IOException e) { }
+            }
+        }
+        /**
+         * 服务器端连接是否正常
+         * */
+        public boolean isConnect() throws Exception{
+            if (trackerServer!=null && trackerServer.getConnection().isAvaliable()
+                    && trackerServer.getConnection().isConnected()) {
+                return true;
+            }
+            return false;
+        }
+
+        public void closeConn(ExpLogInterface log){
+            try {
+                if (trackerServer!=null) {
+                    trackerServer.getConnection().close();
+                    trackerServer=null;
+                }
+                if (trackerClient!=null)
+                    trackerClient=null;
+            } catch (Exception e) {
+                log.logException(new BusiException(e,3999, BusiException.ExpLevel.ERROR));
+            }
+        }
+
+        public static String[] uploadFile(StorageClient storageClient, String group, byte[] content,
+                                         String extName, NameValuePair[] meta_list) throws IOException, MyException {
+            try {
+                return storageClient.upload_file(group, content, extName, meta_list);
+            }catch (IOException ie){
+                if (ie.getMessage().indexOf(RETRY_EXCEPTION_MSG)>=0)
+                    return storageClient.upload_file(group, content, extName, meta_list);
+            }
+            return null;
+        }
+        public static int deleteFile(StorageClient storageClient,String group,String fileName)
+                throws IOException, MyException{
+            try {
+                return storageClient.delete_file(group,fileName);
+            }catch (IOException ie){
+                if (ie.getMessage().indexOf(RETRY_EXCEPTION_MSG)>=0)
+                    return storageClient.delete_file(group,fileName);
+            }
+            return 0;
+        }
+    }
+
+    /*判断连接是否可用，如果不可用，则尝试重连服务端*/
+    public synchronized boolean isServerConnect() throws Exception{
+        if (g_FdfsConns==null)
+            g_FdfsConns = connectServer();
+        if (activeTest())
+            return true;
+        reConnServer(g_FdfsConns);
+        return g_FdfsConns.isConnect();
+    }
+
     /*
     * 启动管理初始化
     * */
     public void runFdfsClientMgr(String[] args){
-        if (trackerServer == null) {
-            initGroupMap();
-            reConnServer();
-        }
+        initGroupMap();
+        g_FdfsConns = connectServer();
     }
     private void initGroupMap(){
         try {
@@ -64,62 +152,66 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
     /*
     * 重连FastDFS服务器
     * */
-    private void reConnServer(){
+    private void reConnServer(FdfsConns fdfsConns){
         try {
-            FdfsClientMgrConfig fdfsClientMgrConf= SpringContextHolder.getBean("fdfsClientMgrConfig");;
-            if (fdfsClientMgrConf == null)
-                throw new BusiException("未取得FdfsClientMgrConf实例");
-            try {
-                ClientGlobal.initByProperties(fdfsClientMgrConf.getPropertiesFile());
-                TrackerClient trackerClient = new TrackerClient();
-                trackerServer = trackerClient.getTrackerServer();
-                if (trackerServer == null)
-                    throw new BusiException("连接FastDFS服务端失败!");
-                logFileMsg("连接FastDFS服务端......成功!");
-            } catch (MyException me) {
-                trackerServer = null;
-                throw new BusiException(me.getMessage());
-            } catch (IOException e) {
-                trackerServer = null;
-                throw new BusiException(e.getMessage());
-            }
-        } catch (BusiException be) {
-            logException(be);
-        }catch (Exception e){
-            BusiException be = new BusiException(e);
-            this.logException(be);
+            ClientGlobal.initByProperties(fdfsConns.getConfFile());
+            fdfsConns.setTrackerClient(new TrackerClient());
+            TrackerServer tServer = fdfsConns.getTrackerClient().getTrackerServer();
+            if (tServer == null)
+                throw new BusiException("连接FastDFS TrackerServer失败!");
+            fdfsConns.setTrackerServer(tServer);
+            logFileMsg("连接FastDFS服务端......成功!");
+        } catch (Exception e){
+            if (fdfsConns!=null)
+                fdfsConns.closeConn(this);
+            logException(new BusiException(e,3999,BusiException.ExpLevel.ERROR));
         }
     }
-    /*
+
+    private FdfsConns connectServer(){
+        FdfsClientMgrConfig fdfsClientMgrConf= SpringContextHolder.getBean("fdfsClientMgrConfig");;
+        if (fdfsClientMgrConf == null) {
+            logException(new BusiException(new Exception("未取得FdfsClientMgrConf实例"),3999,
+                    BusiException.ExpLevel.ERROR));
+            return null;
+        }
+        FdfsConns retObj=new FdfsConns();
+        retObj.setConfFile(fdfsClientMgrConf.getPropertiesFile());
+        reConnServer(retObj);
+        return retObj;
+    }
+
+    /**
     * 重载析构
     * */
     protected void finalize(){
+        logFileMsg("stopFdfsClientMgr by finalize");
         stopFdfsClientMgr();
     }
-    /*
+    /**
+     * 执行一次活跃检测
+     * */
+    public boolean activeTest(){
+        if (g_FdfsConns!=null){
+            try {
+                return g_FdfsConns.getTrackerServer().getConnection().activeTest();
+            }catch (Exception e){
+                logFileMsg("activeTest error:"+e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    /**
     * 关闭服务连接
     * */
     public synchronized void stopFdfsClientMgr(){
-        if (trackerServer!=null){
-            try {
-                Connection conn=trackerServer.getConnection();
-                conn.close();
-                trackerServer=null;
-            }catch (MyException me){
-                trackerServer=null;
-            }catch (IOException e){
-                trackerServer=null;
-            }
+        if (g_FdfsConns != null) {
+            g_FdfsConns.closeConn(this);
         }
-        logFileMsg("关闭FastDFS服务端连接......");
+        logException(new BusiException("关闭FastDFS服务端连接......"));
     }
-    /*判断连接是否可用，如果不可用，则尝试重连服务端*/
-    public synchronized boolean isConnect(){
-        if (trackerServer==null){
-            reConnServer();
-        }
-        return trackerServer!=null;
-    }
+
     public String getTypeGroupName(String type){
         if (typeGroupMap==null)
             return DEFAULT_GROUP_NAME;
@@ -128,68 +220,77 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
             return DEFAULT_GROUP_NAME;
         return groupname;
     }
-    /*上传文件*/
+    /**
+     * 上传文件:按文件
+     * */
     public String uploadFile(String type,String fileName){
-        if (!isConnect())
-            return null;
+        StorageClient storageClient=null;
         try {
-            StorageClient storageClient = new StorageClient(trackerServer, null);
-            String[] files=storageClient.upload_file(getTypeGroupName(type),FileUtil.getContent(fileName),
-                    FileUtil.getExtention(fileName),null);
-            if (files!=null && files.length>1)
-                return files[0]+":"+files[1];
-        }catch (MyException me){
-            stopFdfsClientMgr();
-        }catch (IOException e){
-            stopFdfsClientMgr();
+            if (!isServerConnect())
+                return null;
+            storageClient = g_FdfsConns.createStorageClient();
+            String[] files = FdfsConns.uploadFile(storageClient,getTypeGroupName(type), FileUtil.getContent(fileName),
+                    FileUtil.getExtention(fileName), null);
+            if (files != null && files.length > 1)
+                return files[0] + ":" + files[1];
+        } catch (Exception e) {
+            logException(new BusiException(e));
+        }finally {
+            FdfsConns.closeStorageClient(storageClient);
         }
         return null;
     }
+    /**
+     * 上传文件*按内容
+     * */
     public String uploadFile(String type,byte[] file,String extName){
-        if (!isConnect())
-            return null;
+        StorageClient storageClient=null;
         try {
-            StorageClient storageClient = new StorageClient(trackerServer, null);
-            String[] files=storageClient.upload_file(getTypeGroupName(type),file,extName,null);
+            if (!isServerConnect())
+                return null;
+            storageClient = g_FdfsConns.createStorageClient();
+            String[] files=FdfsConns.uploadFile(storageClient,getTypeGroupName(type),file,extName,null);
             if (files!=null && files.length>1)
                 return files[0]+":"+files[1];
-        }catch (MyException me){
-            stopFdfsClientMgr();
-        }catch (IOException e){
-            stopFdfsClientMgr();
+        }catch (Exception e){
+            logException(new BusiException(e));
+        }finally {
+            FdfsConns.closeStorageClient(storageClient);
         }
         return null;
     }
 
     public int deleteFile(String type,String submitName){
-        if (!isConnect())
-            return 0;
+        StorageClient storageClient=null;
         try {
-            StorageClient storageClient = new StorageClient(trackerServer, null);
+            if (!isServerConnect())
+                return 0;
+            storageClient = g_FdfsConns.createStorageClient();
             String group=getTypeGroupName(type);
             String fileName=submitName.replaceFirst(group+":","");
-            return storageClient.delete_file(group,fileName);
-        }catch (MyException me){
-            stopFdfsClientMgr();
-        }catch (IOException e){
-            stopFdfsClientMgr();
+            return  FdfsConns.deleteFile(storageClient,group,fileName);
+        }catch (Exception e){
+            logException(new BusiException(e));
+        }finally {
+            FdfsConns.closeStorageClient(storageClient);
         }
         return 0;
     }
 
     public byte[] downloadFile(String type,String submitName){
-        if (!isConnect())
-            return null;
+        StorageClient storageClient=null;
         try {
-            StorageClient storageClient = new StorageClient(trackerServer, null);
+            if (!isServerConnect())
+                return null;
+            storageClient = g_FdfsConns.createStorageClient();
             byte[] contents=storageClient.download_file(getTypeGroupName(type),submitName);
             if (contents==null || contents.length<=0)
                 return null;
             return contents;
-        }catch (MyException me){
-            stopFdfsClientMgr();
-        }catch (IOException e){
-            stopFdfsClientMgr();
+        }catch (Exception e){
+            logException(new BusiException(e));
+        }finally {
+            FdfsConns.closeStorageClient(storageClient);
         }
         return null;
     }
