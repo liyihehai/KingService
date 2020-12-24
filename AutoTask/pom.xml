@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -10,9 +10,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.nnte.kservice</groupId>
-    <artifactId>fdfs_client_mgr</artifactId>
-    <name>fdfs_client_mgr</name>
+    <artifactId>AutoTask</artifactId>
     <version>1.0.1-SNAPSHOT</version>
+    <name>AutoTask</name>
     <packaging>jar</packaging>
 
     <properties>
@@ -20,6 +20,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
+
     <repositories>
         <repository>
             <id>snapshots</id>
@@ -54,18 +55,8 @@
             <artifactId>nnte_BaseBusi</artifactId>
             <version>1.0.1-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>org.csource</groupId>
-            <artifactId>fastdfs-client-java</artifactId>
-            <version>1.29-SNAPSHOT</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
+
     <build>
         <resources>
             <resource>

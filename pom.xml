@@ -3,13 +3,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.4.1</version>
-    <relativePath/> <!-- lookup parent from repository -->
-  </parent>
-
   <groupId>com.nnte.kservice</groupId>
   <artifactId>KingService</artifactId>
   <version>1.0.1</version>
@@ -34,21 +27,59 @@
   </repositories>
 
   <dependencies>
+    <!--
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
+    </dependency>
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <version>2.4.1</version>
     </dependency>
     <!--内部依赖-->
     <dependency>
       <groupId>com.nnte.kservice</groupId>
       <artifactId>OfficeConverPDF</artifactId>
       <version>1.0.1-SNAPSHOT</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-autoconfigure</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.nnte.kservice</groupId>
       <artifactId>fdfs_client_mgr</artifactId>
       <version>1.0.1-SNAPSHOT</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.nnte</groupId>
+          <artifactId>nnte_BaseBusi</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.nnte</groupId>
+          <artifactId>nnte_Framework</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.nnte.kservice</groupId>
+      <artifactId>AutoTask</artifactId>
+      <version>1.0.1-SNAPSHOT</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.nnte</groupId>
+          <artifactId>nnte_BaseBusi</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.nnte</groupId>
+          <artifactId>nnte_Framework</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
@@ -56,6 +87,11 @@
     <finalName>KingService</finalName>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
       <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
         <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
@@ -73,10 +109,6 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.22.1</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>

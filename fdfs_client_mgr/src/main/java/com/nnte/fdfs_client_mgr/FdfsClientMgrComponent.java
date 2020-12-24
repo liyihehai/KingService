@@ -3,6 +3,7 @@ package com.nnte.fdfs_client_mgr;
 import com.nnte.basebusi.base.BaseBusiComponent;
 import com.nnte.basebusi.excption.BusiException;
 import com.nnte.basebusi.excption.ExpLogInterface;
+import com.nnte.framework.base.BaseNnte;
 import com.nnte.framework.base.SpringContextHolder;
 import com.nnte.framework.utils.FileUtil;
 import com.nnte.framework.utils.NumberUtil;
@@ -87,7 +88,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
             try {
                 return storageClient.upload_file(group, content, extName, meta_list);
             }catch (IOException ie){
-                if (ie.getMessage().indexOf(RETRY_EXCEPTION_MSG)>=0)
+                if (BaseNnte.getExpMsg(ie).indexOf(RETRY_EXCEPTION_MSG)>=0)
                     return storageClient.upload_file(group, content, extName, meta_list);
             }
             return null;
@@ -97,7 +98,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
             try {
                 return storageClient.delete_file(group,fileName);
             }catch (IOException ie){
-                if (ie.getMessage().indexOf(RETRY_EXCEPTION_MSG)>=0)
+                if (BaseNnte.getExpMsg(ie).indexOf(RETRY_EXCEPTION_MSG)>=0)
                     return storageClient.delete_file(group,fileName);
             }
             return 0;
@@ -196,7 +197,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
             try {
                 return g_FdfsConns.getTrackerServer().getConnection().activeTest();
             }catch (Exception e){
-                logFileMsg("activeTest error:"+e.getMessage());
+                logFileMsg("activeTest error:"+ BaseNnte.getExpMsg(e));
             }
         }
         return false;

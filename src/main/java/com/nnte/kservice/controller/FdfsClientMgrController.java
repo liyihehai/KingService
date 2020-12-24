@@ -61,7 +61,7 @@ public class FdfsClientMgrController {
             }
             buf=null;
         }catch (Exception e){
-            BaseNnte.setRetFalse(ret,1002,"文件上传异常!"+e.getMessage());
+            BaseNnte.setRetFalse(ret,1002,"文件上传异常!"+BaseNnte.getExpMsg(e));
         }
         return ret;
     }

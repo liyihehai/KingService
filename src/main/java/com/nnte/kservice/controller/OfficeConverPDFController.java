@@ -73,7 +73,7 @@ public class OfficeConverPDFController {
                 }
             }
         }catch (Exception e){
-            BaseNnte.setRetFalse(ret,1002,"文件转换上传异常!"+e.getMessage());
+            BaseNnte.setRetFalse(ret,1002,"文件转换上传异常!"+BaseNnte.getExpMsg(e));
         }finally {
             try {
                 if (StringUtils.isNotEmpty(tmpfile))

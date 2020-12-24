@@ -81,12 +81,6 @@
             <artifactId>jodconverter-core</artifactId>
             <version>3.0-beta-4</version>
         </dependency>
-        <!--内部依赖-->
-        <dependency>
-            <groupId>com.nnte</groupId>
-            <artifactId>nnte_Framework</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
-        </dependency>
     </dependencies>
 
     <build>
