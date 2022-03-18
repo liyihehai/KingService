@@ -1,14 +1,11 @@
 package com.nnte.fdfs_client_mgr;
 
-import com.nnte.basebusi.base.BaseBusiComponent;
+import com.nnte.basebusi.base.BaseComponent;
+import com.nnte.basebusi.base.BaseLog;
 import com.nnte.basebusi.excption.BusiException;
-import com.nnte.basebusi.excption.ExpLogInterface;
 import com.nnte.framework.base.BaseNnte;
 import com.nnte.framework.base.SpringContextHolder;
-import com.nnte.framework.utils.FileUtil;
-import com.nnte.framework.utils.NumberUtil;
-import com.nnte.framework.utils.PropertiesUtil;
-import com.nnte.framework.utils.StringUtils;
+import com.nnte.framework.utils.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.csource.common.MyException;
@@ -24,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class FdfsClientMgrComponent extends BaseBusiComponent {
+public class FdfsClientMgrComponent extends BaseComponent {
 
     private static Map<String,String> typeGroupMap = new HashMap<>();
     private static String DEFAULT_GROUP_NAME="group1";
@@ -70,7 +67,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
             return false;
         }
 
-        public void closeConn(ExpLogInterface log){
+        public void closeConn(){
             try {
                 if (trackerServer!=null) {
                     trackerServer.getConnection().close();
@@ -79,7 +76,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
                 if (trackerClient!=null)
                     trackerClient=null;
             } catch (Exception e) {
-                log.logException(new BusiException(e,3999, BusiException.ExpLevel.ERROR));
+                BaseLog.outLogExp(new BusiException(e,3999, LogUtil.LogLevel.error));
             }
         }
 
@@ -144,10 +141,10 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
                 }
             }
         } catch (BusiException be) {
-            this.logException(be);
+            outLogExp(be);
         } catch (Exception e){
             BusiException be = new BusiException(e);
-            this.logException(be);
+            outLogExp(be);
         }
     }
     /*
@@ -161,19 +158,19 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
             if (tServer == null)
                 throw new BusiException("连接FastDFS TrackerServer失败!");
             fdfsConns.setTrackerServer(tServer);
-            logFileMsg("连接FastDFS服务端......成功!");
+            outLogInfo("连接FastDFS服务端......成功!");
         } catch (Exception e){
             if (fdfsConns!=null)
-                fdfsConns.closeConn(this);
-            logException(new BusiException(e,3999,BusiException.ExpLevel.ERROR));
+                fdfsConns.closeConn();
+            outLogExp(new BusiException(e,3999, LogUtil.LogLevel.error));
         }
     }
 
     private FdfsConns connectServer(){
         FdfsClientMgrConfig fdfsClientMgrConf= SpringContextHolder.getBean("fdfsClientMgrConfig");;
         if (fdfsClientMgrConf == null) {
-            logException(new BusiException(new Exception("未取得FdfsClientMgrConf实例"),3999,
-                    BusiException.ExpLevel.ERROR));
+            outLogExp(new BusiException(new Exception("未取得FdfsClientMgrConf实例"),3999,
+                    LogUtil.LogLevel.error));
             return null;
         }
         FdfsConns retObj=new FdfsConns();
@@ -186,7 +183,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
     * 重载析构
     * */
     protected void finalize(){
-        logFileMsg("stopFdfsClientMgr by finalize");
+        outLogInfo("stopFdfsClientMgr by finalize");
         stopFdfsClientMgr();
     }
     /**
@@ -197,7 +194,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
             try {
                 return g_FdfsConns.getTrackerServer().getConnection().activeTest();
             }catch (Exception e){
-                logFileMsg("activeTest error:"+ BaseNnte.getExpMsg(e));
+                outLogInfo("activeTest error:"+ BaseNnte.getExpMsg(e));
             }
         }
         return false;
@@ -208,9 +205,9 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
     * */
     public synchronized void stopFdfsClientMgr(){
         if (g_FdfsConns != null) {
-            g_FdfsConns.closeConn(this);
+            g_FdfsConns.closeConn();
         }
-        logException(new BusiException("关闭FastDFS服务端连接......"));
+        outLogExp(new BusiException("关闭FastDFS服务端连接......"));
     }
 
     public String getTypeGroupName(String type){
@@ -235,7 +232,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
             if (files != null && files.length > 1)
                 return files[0] + ":" + files[1];
         } catch (Exception e) {
-            logException(new BusiException(e));
+            outLogExp(new BusiException(e));
         }finally {
             FdfsConns.closeStorageClient(storageClient);
         }
@@ -254,7 +251,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
             if (files!=null && files.length>1)
                 return files[0]+":"+files[1];
         }catch (Exception e){
-            logException(new BusiException(e));
+            outLogExp(new BusiException(e));
         }finally {
             FdfsConns.closeStorageClient(storageClient);
         }
@@ -271,7 +268,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
             String fileName=submitName.replaceFirst(group+":","");
             return  FdfsConns.deleteFile(storageClient,group,fileName);
         }catch (Exception e){
-            logException(new BusiException(e));
+            outLogExp(new BusiException(e));
         }finally {
             FdfsConns.closeStorageClient(storageClient);
         }
@@ -289,7 +286,7 @@ public class FdfsClientMgrComponent extends BaseBusiComponent {
                 return null;
             return contents;
         }catch (Exception e){
-            logException(new BusiException(e));
+            outLogExp(new BusiException(e));
         }finally {
             FdfsConns.closeStorageClient(storageClient);
         }

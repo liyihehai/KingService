@@ -1,12 +1,11 @@
 package com.nnte.AutoTask;
 
-import com.nnte.basebusi.base.BaseBusiComponent;
 import com.nnte.basebusi.excption.BusiException;
-import com.nnte.basebusi.excption.ExpLogInterface;
 import com.nnte.framework.base.BaseNnte;
 import com.nnte.framework.base.NameLockComponent;
 import com.nnte.framework.base.SpringContextHolder;
 import com.nnte.framework.utils.DateUtils;
+import com.nnte.framework.utils.LogUtil;
 import com.nnte.framework.utils.StringUtils;
 import com.nnte.framework.utils.ThreadUtil;
 
@@ -37,7 +36,6 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
     private Date lastRunExceptionTime = null;   //上次执行异常时间
     private Date nextRunStartTime = null;       //下次开始执行时间
     private String lastRunExceptionMsg = "";    //上次执行异常的错误信息
-    private ExpLogInterface logInterface;       //任务日志接口
     private NameLockComponent.NameReentrantLock taskLock;     //任务锁对象
     private boolean isListen;               //是否监听
     private int taskListenStatus;           //任务监听状态:0未监听，1已监听:处于监听状态的任务才能接受外部消息,2:监听挂起
@@ -58,7 +56,7 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
         }
     }
 
-    public TaskRunEntity(TaskEntity te,ExpLogInterface logInterface){
+    public TaskRunEntity(TaskEntity te){
         this.setTaskCode(te.getTaskCode());
         this.setTaskName(te.getTaskName());
         this.setTaskComponent(te.getTaskComponent());
@@ -66,7 +64,6 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
         this.setTaskParamJson(te.getTaskParamJson());
         this.setTaskListenStatus(0);//初始化时，任务的监听状态为0:未监听
         this.threadHandle = null;
-        this.logInterface = logInterface;
         String taskLockName = "taskLockName_"+te.getTaskCode();
         this.taskLock = AutoTaskComponent.AutoTaskLock.getLockByName(taskLockName,true);
         this.setRunTask(te.isTaskRun());
@@ -102,13 +99,13 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
      * 获取任务锁
      * */
     private boolean getTaskLock(){
-        return AutoTaskComponent.AutoTaskLock.TryLock(taskLock, lockTimes, null);
+        return AutoTaskComponent.AutoTaskLock.TryLock(taskLock, lockTimes);
     }
     /**
      * 释放任务锁
      * */
     private void releaseTaskLock(){
-        AutoTaskComponent.AutoTaskLock.ReleasLock(taskLock,null);
+        AutoTaskComponent.AutoTaskLock.ReleasLock(taskLock);
     }
     /**
      * 设置任务开始信息
@@ -154,9 +151,9 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
             if (!this.isLastTaskSuc){
                 logs.append("Task[uuid="+uuid+",error="+this.getLastRunExceptionMsg()+"]\n");
             }
-            BaseBusiComponent.logInfo(logInterface,logs.toString());
+           outLogInfo(logs.toString());
         }catch (Exception e){
-            e.printStackTrace();
+            outLogExp(e);
         }
     }
     /**
@@ -185,7 +182,7 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
             }
             return;
         }
-        throw new BusiException(22001,"任务未处于等待状态", BusiException.ExpLevel.WARN);
+        throw new BusiException(22001,"任务未处于等待状态");
     }
     /**
      * 执行监听任务函数，执行任务时，任务暂时不接收监听
@@ -200,12 +197,12 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
             taskRunExceptTimes++;
             lastRunExceptionTime = new Date();
             lastRunExceptionMsg = BaseNnte.getExpMsg(tLockExp);
-            BaseBusiComponent.logError(logInterface,tLockExp);
+            outLogExp(tLockExp);
         }catch (BusiException e){
             taskRunExceptTimes++;
             lastRunExceptionTime = new Date();
             lastRunExceptionMsg = BaseNnte.getExpMsg(e);
-            BaseBusiComponent.logError(logInterface,e);
+            outLogExp(e);
         }finally {
             setTaskEndInfo();
             releaseTaskLock();
@@ -244,12 +241,11 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
             }
             if (isCheck) {
                 if (!checkTaskListenStatue(1))
-                    throw new BusiException(21103, "任务监听没有正确启动",
-                            BusiException.ExpLevel.WARN);
+                    throw new BusiException(21103, "任务监听没有正确启动");
             }
         }else
             throw new BusiException(err_code_tasklock_failed,err_msg_tasklock_failed,
-                                    BusiException.ExpLevel.ERROR);
+                                    LogUtil.LogLevel.error);
     }
     /**
      * 停止任务监听
@@ -264,11 +260,10 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
                 releaseTaskLock();
             }
             if (!checkTaskListenStatue(0))
-                throw new BusiException(21102,"任务监听阻塞,没有正确停止",
-                        BusiException.ExpLevel.WARN);
+                throw new BusiException(21102,"任务监听阻塞,没有正确停止");
         }else
             throw new BusiException(err_code_tasklock_failed,err_msg_tasklock_failed,
-                    BusiException.ExpLevel.ERROR);
+                    LogUtil.LogLevel.error);
     }
 
     @Override
@@ -282,7 +277,7 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
             if (this.taskRunMethod == null)
                 throw new Exception("任务["+this.getTaskName()+"]入口函数为空");
             this.setTaskListenStatus(1);
-            BaseBusiComponent.logInfo(logInterface,"任务["+this.getTaskName()+"]监听启动......");
+            outLogInfo("任务["+this.getTaskName()+"]监听启动......");
             while (this.isListen()) {
                 try {
                     nextRunStartTime = null;
@@ -299,7 +294,7 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
                     if (this.isListen() && this.isRunTask)
                         ThreadUtil.Sleep(1000);
                 } catch (Exception e){
-                    BaseBusiComponent.logError(logInterface,e);
+                    outLogExp(e);
                     if (this.isListen() && this.isRunTask)
                         ThreadUtil.Sleep(1000);
                 }
@@ -308,7 +303,7 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
                     ThreadUtil.Sleep(1000);
             }
         }catch (Exception e){
-            BaseBusiComponent.logInfo(logInterface,BaseNnte.getExpMsg(e));
+            outLogExp(e);
         }finally {
             this.setTaskListenStatus(0);
             this.listenStartTime = null;
@@ -316,7 +311,7 @@ public class TaskRunEntity extends TaskEntity implements Runnable{
             this.taskRunState = 0;
             this.nextRunStartTime = null;
             this.lastRunExceptionMsg = "";
-            BaseBusiComponent.logInfo(logInterface,"任务["+this.getTaskName()+"]监听停止......");
+            outLogInfo("任务["+this.getTaskName()+"]监听停止......");
         }
     }
 

@@ -2,6 +2,7 @@ package com.nnte.AutoTask;
 
 import com.nnte.basebusi.excption.BusiException;
 import com.nnte.framework.base.BaseNnte;
+import com.nnte.framework.utils.LogUtil;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -22,6 +23,12 @@ public interface AutoTaskInterface {
         return true;
     }
     /**
+     * 自动任务初始化，本接口只在接口组件加载后执行一次
+     * */
+    default void onAutoTaskBeanInit() throws BusiException{
+
+    }
+    /**
      * 任务执行之后调用
      * */
     default void onAfterTaskRun(TaskRunResult result) throws BusiException{
@@ -37,23 +44,23 @@ public interface AutoTaskInterface {
         Date startTime = new Date();
         try {
             if (!onBeforeTaskRun(taskCode))
-                throw new BusiException(22101,"调用前终止", BusiException.ExpLevel.INFO);
+                throw new BusiException(22101,"调用前终止", LogUtil.LogLevel.info);
             method.invoke(this,paramJson);
             onAfterTaskRun(new TaskRunResult(taskCode,true,null,startTime,new Date()));
         } catch (IllegalAccessException e) {
             onAfterTaskRun(new TaskRunResult(taskCode,false,
-                            new BusiException(e,9997,BusiException.ExpLevel.ERROR),
+                            new BusiException(e,9997, LogUtil.LogLevel.error),
                             startTime,new Date()));
         } catch (InvocationTargetException e) {
             onAfterTaskRun(new TaskRunResult(taskCode,false,
-                    new BusiException(e,9998,BusiException.ExpLevel.ERROR),
+                    new BusiException(e,9998, LogUtil.LogLevel.error),
                     startTime,new Date()));
         } catch (BusiException e){
             onAfterTaskRun(new TaskRunResult(taskCode,false,
                     e,startTime,new Date()));
         } catch (Exception e){
             onAfterTaskRun(new TaskRunResult(taskCode,false,
-                            new BusiException(9999, BaseNnte.getExpMsg(e), BusiException.ExpLevel.ERROR),
+                            new BusiException(9999, BaseNnte.getExpMsg(e), LogUtil.LogLevel.error),
                             startTime,new Date()));
         }
     }

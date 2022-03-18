@@ -3,12 +3,13 @@ package com.nnte.AutoTask;
 import com.nnte.basebusi.annotation.BusiLogAttr;
 import com.nnte.basebusi.annotation.WatchAttr;
 import com.nnte.basebusi.annotation.WatchInterface;
-import com.nnte.basebusi.base.BaseBusiComponent;
+import com.nnte.basebusi.base.BaseComponent;
 import com.nnte.basebusi.excption.BusiException;
 import com.nnte.framework.base.BaseNnte;
 import com.nnte.framework.base.NameLockComponent;
 import com.nnte.framework.base.SpringContextHolder;
 import com.nnte.framework.utils.DateUtils;
+import com.nnte.framework.utils.LogUtil;
 import com.nnte.framework.utils.StringUtils;
 import com.nnte.framework.utils.ThreadUtil;
 import org.springframework.context.ApplicationContext;
@@ -27,7 +28,7 @@ import java.util.*;
 @Component
 @BusiLogAttr("AutoTaskRoot")
 @WatchAttr(value = 1,execTimes=1)
-public class AutoTaskComponent extends BaseBusiComponent implements WatchInterface {
+public class AutoTaskComponent extends BaseComponent implements WatchInterface {
     private static List<TaskEntity> taskList = new ArrayList<>();
     private static TreeMap<String,TaskRunEntity> taskMap = new TreeMap<>();
     public static NameLockComponent AutoTaskLock = new NameLockComponent();
@@ -37,13 +38,14 @@ public class AutoTaskComponent extends BaseBusiComponent implements WatchInterfa
     /**
      * 扫描任务列表，加载任务并执行，本函数程序启动时只执行一次
      * */
-    private void scanTaskList(){
+    private void scanTaskList() throws BusiException{
         ApplicationContext sch= SpringContextHolder.getApplicationContext();
         String[] names=sch.getBeanDefinitionNames();
         for(String beanName:names){
             Object instanceBody=sch.getBean(beanName);
             if (instanceBody instanceof AutoTaskInterface){
                 Method[] methods=instanceBody.getClass().getDeclaredMethods();
+                int taskCount=0;
                 for(Method m:methods) {
                     AutoTaskMethod feAnno = m.getAnnotation(AutoTaskMethod.class);
                     if (feAnno!=null){
@@ -55,8 +57,12 @@ public class AutoTaskComponent extends BaseBusiComponent implements WatchInterfa
                         task.setTaskParamJson(feAnno.param());
                         task.setTaskRun(feAnno.isRun());
                         taskList.add(task);
+                        taskCount++;
                     }
                 }
+                /** 如果组件任务数量大于0，需要执行接口组件初始化函数 */
+                if (taskCount>0)
+                    ((AutoTaskInterface) instanceBody).onAutoTaskBeanInit();
             }
         }
         for(TaskEntity task:taskList){
@@ -70,13 +76,13 @@ public class AutoTaskComponent extends BaseBusiComponent implements WatchInterfa
 
     private void addTaskAndListen(TaskEntity task) {
         try {
-            TaskRunEntity newTre = new TaskRunEntity(task, this);
+            TaskRunEntity newTre = new TaskRunEntity(task);
             TaskRunEntity.setComponentTaskRunMethod(newTre);
             taskMap.put(newTre.getTaskCode(), newTre);
             //启动该任务
             newTre.startTaskListen(false);
         }catch (BusiException be){
-            BaseBusiComponent.logError(this,be);
+            outLogExp(be);
         }
     }
     /**
@@ -121,11 +127,11 @@ public class AutoTaskComponent extends BaseBusiComponent implements WatchInterfa
     @Override
     public void runWatch() {
         try{
-            BaseBusiComponent.logInfo(this,"自动任务扫描任务列表启动......");
+            outLogInfo("自动任务扫描任务列表启动......");
             scanTaskList();
-            BaseBusiComponent.logInfo(this,"自动任务扫描任务列表结束！");
+            outLogInfo("自动任务扫描任务列表结束！");
         }catch (Exception e){
-            BaseBusiComponent.logInfo(this, BaseNnte.getExpMsg(e));
+            outLogExp(e);
         }
     }
 
@@ -217,7 +223,7 @@ public class AutoTaskComponent extends BaseBusiComponent implements WatchInterfa
         TaskRunEntity TRE=taskMap.get(taskCode);
         if (TRE==null)
             throw new BusiException(err_code_taskcode_invalid,
-                    err_msg_taskcode_invalid, BusiException.ExpLevel.ERROR);
+                    err_msg_taskcode_invalid, LogUtil.LogLevel.error);
         return TRE;
     }
     /**

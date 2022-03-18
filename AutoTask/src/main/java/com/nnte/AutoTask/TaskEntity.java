@@ -1,6 +1,8 @@
 package com.nnte.AutoTask;
 
-public class TaskEntity {
+import com.nnte.basebusi.base.BaseComponent;
+
+public class TaskEntity extends BaseComponent {
     private String taskCode;        //任务代码
     private String taskName;        //任务名称
     private String taskComponent;   //组件名称
