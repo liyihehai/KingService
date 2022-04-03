@@ -257,16 +257,16 @@ public class FdfsClientMgrComponent extends BaseComponent {
         }
         return null;
     }
-
-    public int deleteFile(String type,String submitName){
+    /**
+     * 删除文件：groupName = group1; pointFileName = M0/00/00/....
+     * */
+    public int deleteFile(String groupName,String pointFileName){
         StorageClient storageClient=null;
         try {
             if (!isServerConnect())
                 return 0;
             storageClient = g_FdfsConns.createStorageClient();
-            String group=getTypeGroupName(type);
-            String fileName=submitName.replaceFirst(group+":","");
-            return  FdfsConns.deleteFile(storageClient,group,fileName);
+            return  FdfsConns.deleteFile(storageClient,groupName,pointFileName);
         }catch (Exception e){
             outLogExp(new BusiException(e));
         }finally {
